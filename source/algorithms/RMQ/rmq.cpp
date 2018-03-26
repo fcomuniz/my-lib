@@ -1,0 +1,39 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+using ll = long long;
+using vi = vector<int>;
+using vll = vector<ll>;
+#define MAXN 1 << 13
+#define MLOGN 13
+
+void process1(int M[MAXN][MAXN], int A[MAXN], int N){
+	int i, j;
+	for(i = 0; i < N; i++){
+		M[i][i] = i;
+	}
+	for(i = 0; i < N; i++){
+		for(j = i+1; j< N; j++){
+			if(A[M[i][j-1]] < A[j])
+				M[i][j] = M[i][j-1];
+			else
+				M[i][j] = j;
+		}
+	}
+}
+void process2(int M[MAXN][MLOGN], int A[MAXN], int N){
+	int i,j;
+	for(i=0; i < N; i++){
+		M[i][0] = i;
+	}
+	for(j = 1; 1 << j <=N; j++){
+		for(i = 0; i + (1 << j) -1 < N; i++)
+			if(A[M[i][j-1]] < A[M[i + (1 << (j-1))][j-1]]){
+				M[i][j] = M[i][j-1];
+			} else {
+				M[i][j] = M[i + (1 << (j-1))][j-1];
+			}
+	}
+}
+
+
