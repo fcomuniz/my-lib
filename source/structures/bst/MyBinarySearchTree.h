@@ -1,7 +1,7 @@
 #ifndef MY_LIB_MY_BINARY_SEARCH_TREE
 #define MY_LIB_MY_BINARY_SEARCH_TREE
 
-#include <exceptions/exceptions.h>
+#include <structures/exceptions/exceptions.h>
 
 namespace my_lib{
 	namespace my_bst{
@@ -15,6 +15,8 @@ namespace my_lib{
 		struct node{
 			node(): left(nullptr), right(nullptr), parent(nullptr){
 
+			}
+			virtual ~node(){
 			}
 			node(T val): node(){
 				this->val = val;
@@ -50,24 +52,20 @@ namespace my_lib{
 			}
 
 		template<class T>
-		T getLeftmost(nptr<T> node){
-			if(node == nullptr) throw my_lib::exception::empty_exception();
-			const T & returnValue;
-			while(node != nullptr){
-				returnValue = node->val;
+		nptr<T> getLeftmost(nptr<T> node){
+			if(node == nullptr) throw my_lib::exception::empty_exception("getting leftmost");
+			while(node->left != nullptr){
 				node = node->left;
 			}
-			return returnValue;
+			return node;
 		}
 		template<class T>
-			T getRightmost(nptr<T> node){
+			nptr<T> getRightmost(nptr<T> node){
 				if(node == nullptr) throw my_lib::exception::empty_exception("getting rightmost");
-				const T & returnValue;
-				while(node != nullptr){
-					returnValue = node->val;	
+				while(node->right != nullptr){
 					node = node->right;
 				}
-				return returnValue;
+				return node;
 
 			}
 		template<class T>
@@ -95,25 +93,55 @@ namespace my_lib{
 				}
 				return y;
 			}
+			template<class T,class iterator>
+			nptr<T> constructTree(iterator begin, iterator end, nptr<T> parent = nullptr){
+				if(begin == end) return nullptr;
+				int dist = end-begin-1;
+				iterator middle = begin + (dist)/2;
+				nptr<T> node = new my_lib::my_bst::node<T>(*middle);	
+				node->left = constructTree<T>(begin,middle,node);
+				node->right = constructTree<T>(middle+1,end,node);
+				node->parent = parent;
+				return node;
+			}
+			template<class T>
+				void deleteTree(nptr<T> node){
+					if(node == nullptr) return;
+					deleteTree(node->left);
+					deleteTree(node->right);
+					delete node;
+				}
 		template<class T>
 			struct BSTIterator{
 				public:
 					BSTIterator(){
-						currentPointer == nullptr;
+						currentPointer = nullptr;
 					}
 					BSTIterator(nptr<T> position){
 						currentPointer = position;
 					}
-					bool operator==(const BSTIterator & iter){
+					bool operator==(const BSTIterator & iter) const{
 						return currentPointer == iter.currentPointer;
 					}
+					bool operator!=(const BSTIterator & iter) const{
+						return !((*this)==iter);
+					}
 					template<class v>
-						bool operator+(v integralValue){
+						BSTIterator<T> operator+(v integralValue)const {
+							auto ptr = currentPointer;
 							while(integralValue--){
-								if(currentPointer == nullptr) throw exception::noNextException("bst iterator");
-								currentPointer = getSuccessor(currentPointer);
+								if(ptr == nullptr) throw exception::noNextException("bst iterator");
+								ptr = getSuccessor(ptr);
 							}
+							return BSTIterator(ptr);
 						}
+					BSTIterator<T> operator++(int a){
+						return *this= this->operator+(1);
+					}
+
+					const T & operator*()const {
+						return (*currentPointer).val;
+					}
 
 				private:
 					nptr<T> currentPointer;
@@ -126,11 +154,15 @@ namespace my_lib{
 			public:
 			using iterator = my_bst::BSTIterator<T>;
 			template<class iterator>
-			MyBinarySearchTree(iterator begin, iterator end){
+			MyBinarySearchTree(iterator begin, iterator end): root(nullptr){
 				sort(begin,end);
-				constructTree(begin,end);
-				beginIter = my_bst::BSTIterator(my_bst::getLeftmost(root));
-				endIter = my_bst::BSTIterator(my_bst::getRightmost(root));
+				constructTree(begin, end);
+				if(root == nullptr){
+				beginIter = my_bst::BSTIterator<T>(nullptr);
+				}else {
+				beginIter = my_bst::BSTIterator<T>(my_bst::getLeftmost(root));
+				}
+				endIter = my_bst::BSTIterator<T>(nullptr);
 			}		
 			
 			iterator begin(){
@@ -140,18 +172,25 @@ namespace my_lib{
 				return endIter;
 			}
 
+
+			protected:
+			template<class c_f>
+			void traverseTree(c_f visitFunction){
+				my_bst::InorderTraversal(root,visitFunction);
+			}
+
 			private:
+			
 			using nptr = my_bst::nptr<T>;
+			template<class iterator>
+				void constructTree(iterator begin, iterator end){
+					if(root != nullptr) delete root;
+					root = nullptr;
+					root = my_bst::constructTree<T>(begin,end);
+				}
 			iterator beginIter;
 			iterator endIter;
 			nptr root;
-			template<class iterator>
-			void constructTree(iterator begin, iterator end){
-
-			}
-
-
-				
 		};
 
 }
